@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Caller must be authenticated with a @bc.edu Firebase Auth email.
+    function isBCUser() {
+      return request.auth != null
+          && request.auth.token.email.lower().matches('.*@bc\\.edu');
+    }
+
+    // ── users ──────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // Each user can only read their own profile document.
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Create: the document id must match the caller's Firebase UID,
+      // all required fields must be present, and name must be non-empty.
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && isBCUser()
+                    && request.resource.data.id == request.auth.uid
+                    && request.resource.data.name.size() >= 1
+                    && request.resource.data.name.size() <= 100
+                    && request.resource.data.keys().hasAll(
+                         ['id', 'name', 'email', 'gender', 'grade', 'dorm', 'createdAt']
+                       );
+
+      // Update: only yourself; id, email, and createdAt are immutable.
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && isBCUser()
+                    && request.resource.data.id        == resource.data.id
+                    && request.resource.data.email     == resource.data.email
+                    && request.resource.data.createdAt == resource.data.createdAt;
+
+      allow delete: if false;
+    }
+
+    // ── rides ──────────────────────────────────────────────────────────────
+    match /rides/{rideId} {
+      // Any authenticated @bc.edu user can browse rides.
+      allow read: if isBCUser();
+
+      // Create: caller must be set as creator, seeded with only themselves
+      // in the riders map, and field values must be within bounds.
+      allow create: if isBCUser()
+                    && request.resource.data.creatorId == request.auth.uid
+                    && request.resource.data.maxRiders in [2, 3, 4, 5]
+                    && request.resource.data.destination.size()     >= 1
+                    && request.resource.data.destination.size()     <= 200
+                    && request.resource.data.meetingLocation.size() >= 1
+                    && request.resource.data.meetingLocation.size() <= 200
+                    && request.resource.data.notes.size()           <= 500
+                    && request.resource.data.riders.keys().hasOnly([request.auth.uid])
+                    && request.resource.data.riders.size() == 1;
+
+      // Update is split into three mutually-exclusive operations.
+      allow update: if isBCUser()
+                    && (isCreatorEditing() || isJoining() || isLeaving());
+
+      // Delete: only the creator, only when departure is more than 24 h away.
+      allow delete: if isBCUser()
+                    && resource.data.creatorId == request.auth.uid
+                    && resource.data.earliestDepartureFromCampus
+                         > request.time + duration.value(1, 'd');
+
+      // Helper: immutable fields that no operation should ever change.
+      function coreFieldsUnchanged() {
+        return request.resource.data.creatorId == resource.data.creatorId
+            && request.resource.data.createdAt == resource.data.createdAt;
+      }
+
+      // Creator may edit notes, destination, etc.
+      // but must not touch the riders map or identity fields.
+      function isCreatorEditing() {
+        return resource.data.creatorId == request.auth.uid
+            && coreFieldsUnchanged()
+            && request.resource.data.riders      == resource.data.riders
+            && request.resource.data.maxRiders   in [2, 3, 4, 5]
+            && request.resource.data.destination.size() >= 1
+            && request.resource.data.destination.size() <= 200
+            && request.resource.data.notes.size()       <= 500;
+      }
+
+      // A user may add only themselves to a non-full ride they aren't in.
+      // Only riders map may change; everything else is frozen.
+      function isJoining() {
+        let diff = request.resource.data.riders.diff(resource.data.riders);
+        return diff.addedKeys().hasOnly([request.auth.uid])
+            && diff.removedKeys().size() == 0
+            && diff.changedKeys().size() == 0
+            && resource.data.riders.size() < resource.data.maxRiders
+            && coreFieldsUnchanged()
+            && request.resource.data.destination == resource.data.destination
+            && request.resource.data.maxRiders   == resource.data.maxRiders;
+      }
+
+      // A non-creator rider may remove only themselves from a ride.
+      // Only riders map may change; everything else is frozen.
+      function isLeaving() {
+        let diff = request.resource.data.riders.diff(resource.data.riders);
+        return diff.removedKeys().hasOnly([request.auth.uid])
+            && diff.addedKeys().size() == 0
+            && diff.changedKeys().size() == 0
+            && resource.data.creatorId != request.auth.uid
+            && coreFieldsUnchanged()
+            && request.resource.data.destination == resource.data.destination
+            && request.resource.data.maxRiders   == resource.data.maxRiders;
+      }
+
+      // ── messages ─────────────────────────────────────────────────────────
+      match /messages/{messageId} {
+        // Only current riders (including creator) can read or write the chat.
+        function isRider() {
+          let ride = get(/databases/$(database)/documents/rides/$(rideId));
+          return request.auth.uid == ride.data.creatorId
+              || ride.data.riders.keys().hasAny([request.auth.uid]);
+        }
+
+        allow read: if isBCUser() && isRider();
+
+        // senderId must match the caller; text must be 1–500 characters.
+        allow create: if isBCUser()
+                      && isRider()
+                      && request.resource.data.senderId == request.auth.uid
+                      && request.resource.data.text.size() >= 1
+                      && request.resource.data.text.size() <= 500;
+
+        // Messages are immutable and cannot be deleted by clients.
+        allow update, delete: if false;
+      }
+    }
+  }
+}

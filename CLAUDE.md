@@ -1,0 +1,129 @@
+# BC Flight Share — Project Guide
+
+## What This App Does
+iOS app for Boston College students to find ride-share partners to the airport. Users post a ride with a destination, meeting location at BC, and departure date/time. Other BC students browse a calendar view, tap a date to see all rides posted that day, and join a ride to split the Uber cost.
+
+## Tech Stack
+- **Language**: Swift 6 / SwiftUI
+- **Backend**: Firebase (Firestore + Firebase Auth)
+- **Minimum iOS**: 26.2
+- **Architecture**: MVVM with `@Observable` view models
+- **Key Swift settings**: `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, `SWIFT_APPROACHABLE_CONCURRENCY = YES`
+
+## Firebase Setup (Required Before Building)
+1. Add Firebase via **File → Add Package Dependencies** → `https://github.com/firebase/firebase-ios-sdk`
+   - Select only: `FirebaseAuth` and `FirebaseFirestore`
+2. Create project at `console.firebase.google.com` → bundle ID: `Alexistheman.BC-Flight-Share`
+3. Download `GoogleService-Info.plist` and drag into `BC Flight Share/` folder in Xcode
+4. Firebase console: enable **Email/Password** auth and create a **Firestore** database (test mode to start)
+
+## Project Structure
+
+```
+BC Flight Share/
+├── BC_Flight_ShareApp.swift   — App entry, calls FirebaseApp.configure()
+├── ContentView.swift          — Auth gate: shows AuthView or HomeView based on login state
+├── AppColors.swift            — Color.bcMaroon and Color.bcGold extensions
+├── Models.swift               — Ride and BCUser Codable structs
+├── AuthViewModel.swift        — @Observable: sign in, sign up (@bc.edu enforced), sign out
+├── RideViewModel.swift        — @Observable: Firestore real-time listener, CRUD for rides
+├── AuthView.swift             — Sign in / Create Account screens (SignInForm, SignUpForm)
+├── HomeView.swift             — TabView root: injects RideViewModel, owns startListening/stopListening
+├── CalendarTabView.swift      — Month calendar grid; dots on dates with rides; DayCell component
+├── DayRidesView.swift         — List of RideCards for a tapped date; RideCard component
+├── RideDetailView.swift       — Full ride info, rider list, Join/Leave/Delete, Uber deep link
+├── CreateRideView.swift       — Form to post a ride; chip pickers for destinations + meeting spots
+├── MyRidesView.swift          — All rides the current user has posted or joined
+└── ProfileView.swift          — User name/email display, sign out
+```
+
+## Data Models
+
+### Ride (Firestore collection: `rides`)
+| Field | Type | Notes |
+|-------|------|-------|
+| `creatorId` | String | Firebase UID of poster |
+| `creatorName` | String | Display name |
+| `destination` | String | e.g. "Logan Airport (BOS)" |
+| `meetingLocation` | String | e.g. "Lower Campus Bus Stop" |
+| `departureDate` | Date | Full date + time |
+| `maxRiders` | Int | 2–4 |
+| `riders` | [String: RiderInfo] | Map of UID → {name, gender} for all riders |
+| `notes` | String | Optional free text |
+| `createdAt` | Date | Auto-set on creation |
+
+### BCUser (Firestore collection: `users`)
+| Field | Type |
+|-------|------|
+| `id` | String (Firebase UID) |
+| `name` | String |
+| `email` | String (@bc.edu enforced) |
+| `createdAt` | Date |
+
+## Colors (BC Brand)
+- **Maroon**: `Color.bcMaroon` → `rgb(138, 10, 26)` approx
+- **Gold**: `Color.bcGold` → `rgb(196, 152, 61)` approx
+
+## Key Design Decisions
+- `PBXFileSystemSynchronizedRootGroup` — any `.swift` file dropped in the source folder is auto-included; no need to edit `project.pbxproj`
+- `@Observable` (not `ObservableObject`) — modern Swift Observation framework; use `.environment(vm)` / `@Environment(Type.self)` pattern
+- `RideViewModel` is created in `HomeView` and passed down via `.environment(rideVM)`; `AuthViewModel` is created in `ContentView`
+- `@bc.edu` email check is enforced in `AuthViewModel.signUp()`, not just the UI
+- Rides are filtered by date using a `"yyyy-M-d"` dateKey string (year-month-day components, no leading zeros)
+- Uber integration: deep-links to `uber://`; falls back to `https://m.uber.com/` if app not installed
+
+## SwiftLint (Code Style)
+SwiftLint 0.63.3 is installed via Homebrew. Config is at `.swiftlint.yml` in the project root.
+
+**Run manually:**
+```
+cd "~/Desktop/John Pork/BC Flight Share"
+swiftlint lint "BC Flight Share" "BC Flight ShareTests" "BC Flight ShareUITests"
+```
+
+**Auto-fix safe violations:**
+```
+swiftlint --fix "BC Flight Share"
+```
+
+**Key style rules enforced:**
+- Max line length: 120 (warning) / 160 (error)
+- No trailing commas in arrays/dicts
+- Identifiers ≥ 2 chars (`db` allowed; `c` is not — use `comps`)
+- Each argument on its own line when a call spans multiple lines
+- Prefer `isEmpty` over `== ""` / `count == 0`
+- `static` instead of `class` inside `final class`
+
+**Adding to Xcode build phases** (run once per machine):
+In Xcode → Target → Build Phases → "+" → New Run Script Phase → paste:
+```bash
+if which swiftlint > /dev/null; then swiftlint; fi
+```
+Place it after "Compile Sources". SwiftLint will then run on every build.
+
+## Running Tests
+- **Unit tests** (`BC Flight ShareTests`): `Cmd+U` or Product → Test. Tests pure model logic and ViewModel filtering — no network required.
+- **UI tests** (`BC Flight ShareUITests`): Run on Simulator. Tests the full auth and calendar flow. Requires the app to build (Firebase must be set up).
+
+## How to Add New Features
+1. Add new Swift files to `BC Flight Share/` — Xcode picks them up automatically
+2. For new Firestore fields, update `Models.swift` and any affected ViewModel methods
+3. Add corresponding unit tests to `BC_Flight_ShareTests.swift` (or a new test file in `BC Flight ShareTests/`)
+4. Add UI tests to `BC_Flight_ShareUITests.swift` that cover the new user flow
+5. Update this CLAUDE.md with the new feature, files, and any new data model fields
+
+## Known Pre-Firebase-Setup Behavior
+All SourceKit errors visible before Firebase is added via SPM are expected — they cascade from `FirebaseFirestore` and `FirebaseAuth` being unresolved. They clear completely once the package is added.
+
+## Security — Completed & Remaining
+
+### Completed
+- **Firestore Security Rules** (`firestore.rules`) — replaces open test-mode rules. Enforces `@bc.edu` at the database level, scopes all reads/writes to authenticated users, locks join/leave to the map-diff pattern, enforces the 24 h delete window server-side, caps text fields, makes messages immutable.
+- **Removed `groupChatLink`** — field deleted from model, ViewModel, UI, and rules; app uses its own in-app chat.
+- **Expired ride cleanup** — removed client-side auto-deletion from `RideViewModel.startListening()`; expired rides are filtered locally and ignored. Firestore accumulates them until a Cloud Function cleans up (see below).
+- **Rider data model** — replaced three parallel arrays (`currentRiderIds`, `currentRiderNames`, `currentRiderGenders`) with a single `riders: [String: RiderInfo]` map keyed by Firebase UID. Join/leave are now atomic single-field writes; name changes no longer break leave.
+
+### Remaining (pick up here next session)
+1. **Blocking + message flagging** — let users block others and flag chat messages; store in Firestore `blocks/` and `reports/` collections; update security rules to hide blocked users' rides.
+2. **Cloud Function — expired ride cleanup** — scheduled function that deletes rides where `departureEndTime + 2h < now`; removes the Firestore accumulation problem.
+3. **Firebase Auth blocking function** — enforce `@bc.edu` at the Auth level (not just Firestore) so non-BC accounts can't be created at all via the REST API.
