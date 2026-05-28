@@ -48,7 +48,6 @@ class RideViewModel {
         let ride = Ride(
             creatorId: user.id,
             creatorName: user.name,
-            creatorGender: user.gender,
             destination: request.destination,
             terminal: request.terminal,
             meetingLocation: request.meetingLocation,
@@ -103,6 +102,6 @@ class RideViewModel {
 
     private func dateKey(for date: Date) -> String {
         let comps = Calendar.current.dateComponents([.year, .month, .day], from: date)
-        return "\(comps.year!)-\(comps.month!)-\(comps.day!)"
+        return "\(comps.year ?? 0)-\(comps.month ?? 0)-\(comps.day ?? 0)"
     }
 }

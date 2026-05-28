@@ -15,7 +15,6 @@ struct Ride: Identifiable, Codable {
     @DocumentID var id: String?
     var creatorId: String
     var creatorName: String
-    var creatorGender: String
     var destination: String
     var terminal: String
     var meetingLocation: String
@@ -49,7 +48,7 @@ struct Ride: Identifiable, Codable {
 
     var dateKey: String {
         let comps = Calendar.current.dateComponents([.year, .month, .day], from: earliestDepartureFromCampus)
-        return "\(comps.year!)-\(comps.month!)-\(comps.day!)"
+        return "\(comps.year ?? 0)-\(comps.month ?? 0)-\(comps.day ?? 0)"
     }
 }
 
@@ -86,6 +85,6 @@ struct Message: Identifiable, Codable {
 extension Date {
     var rideKey: String {
         let comps = Calendar.current.dateComponents([.year, .month, .day], from: self)
-        return "\(comps.year!)-\(comps.month!)-\(comps.day!)"
+        return "\(comps.year ?? 0)-\(comps.month ?? 0)-\(comps.day ?? 0)"
     }
 }

@@ -203,8 +203,9 @@ struct RideDetailView: View {
             }
         } else if isJoined {
             Button {
+                guard let user = currentUser else { return }
                 Task {
-                    await rideVM.leaveRide(ride, user: currentUser!)
+                    await rideVM.leaveRide(ride, user: user)
                     dismiss()
                 }
             } label: {
@@ -212,8 +213,9 @@ struct RideDetailView: View {
             }
         } else {
             Button {
+                guard let user = currentUser else { return }
                 Task {
-                    await rideVM.joinRide(ride, user: currentUser!)
+                    await rideVM.joinRide(ride, user: user)
                     dismiss()
                 }
             } label: {

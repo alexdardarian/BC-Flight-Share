@@ -79,7 +79,7 @@ class AuthViewModel {
             try await result.user.sendEmailVerification()
             // auth state listener will set pendingVerification = true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = friendlyAuthError(error)
         }
     }
 
@@ -95,7 +95,7 @@ class AuthViewModel {
                 isLoading = false
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = friendlyAuthError(error)
         }
     }
 
@@ -111,7 +111,7 @@ class AuthViewModel {
                 errorMessage = "Email not verified yet. Check your @bc.edu inbox."
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = friendlyAuthError(error)
         }
     }
 
@@ -120,7 +120,7 @@ class AuthViewModel {
         do {
             try await Auth.auth().currentUser?.sendEmailVerification()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = friendlyAuthError(error)
         }
     }
 
@@ -135,7 +135,7 @@ class AuthViewModel {
             try db.collection("users").document(user.id).setData(from: user)
             currentUser = user
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = friendlyAuthError(error)
         }
     }
 
@@ -144,6 +144,26 @@ class AuthViewModel {
         currentUser = nil
         pendingVerification = false
         pendingVerificationEmail = ""
+    }
+
+    private func friendlyAuthError(_ error: Error) -> String {
+        let code = (error as NSError).code
+        switch AuthErrorCode(rawValue: code) {
+        case .wrongPassword, .userNotFound, .invalidCredential, .invalidEmail:
+            return "Incorrect email or password."
+        case .emailAlreadyInUse:
+            return "An account with this email already exists."
+        case .weakPassword:
+            return "Password must be at least 6 characters."
+        case .tooManyRequests:
+            return "Too many attempts. Please try again later."
+        case .networkError:
+            return "Network error. Please check your connection."
+        case .userDisabled:
+            return "This account has been disabled. Contact support."
+        default:
+            return "Something went wrong. Please try again."
+        }
     }
 
     private func fetchUser(uid: String) async {

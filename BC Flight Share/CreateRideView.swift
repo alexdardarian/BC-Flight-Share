@@ -211,7 +211,8 @@ struct CreateRideView: View {
                     notes: notes,
                     direction: direction
                 )
-                await rideVM.createRide(request: request, user: authVM.currentUser!)
+                guard let user = authVM.currentUser else { return }
+                await rideVM.createRide(request: request, user: user)
                 dismiss()
             }
         } label: {
@@ -222,7 +223,7 @@ struct CreateRideView: View {
                     .foregroundStyle(isValid ? Color.bcMaroon : .secondary)
             }
         }
-        .disabled(!isValid || isSubmitting)
+        .disabled(!isValid || isSubmitting || authVM.currentUser == nil)
     }
 
     // MARK: - Helpers
