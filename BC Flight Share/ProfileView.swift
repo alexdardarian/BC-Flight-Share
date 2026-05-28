@@ -112,7 +112,8 @@ struct ProfileView: View {
                     }
                 }
             } message: {
-                Text("This permanently deletes your account, profile, and all rides you've created. This cannot be undone.")
+                Text("This permanently deletes your account, profile, and all rides you've created. " +
+                     "This cannot be undone.")
             }
         }
     }

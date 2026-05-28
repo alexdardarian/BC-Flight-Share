@@ -231,7 +231,32 @@ struct RideDetailView: View {
 
     // MARK: - Helpers
 
-    private func riderRow(uid: String, name: String, gender: String) -> some View {
+    private var emptySpotRow: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .strokeBorder(
+                    Color.secondary.opacity(0.3),
+                    style: StrokeStyle(lineWidth: 1.5, dash: [4])
+                )
+                .frame(width: 32, height: 32)
+            Text("Open spot").font(.subheadline).foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var liabilityNote: some View {
+        if !isCreator && !isJoined {
+            Text("Meet in a public campus location. BC Flight Share is not responsible for ride safety.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 4)
+        }
+    }
+}
+
+private extension RideDetailView {
+    func riderRow(uid: String, name: String, gender: String) -> some View {
         let showFull = isJoined || isCreator
         let displayName = showFull ? name : abbreviatedName(name)
         let displayText = showFull && !gender.isEmpty ? "\(displayName) (\(gender))" : displayName
@@ -249,25 +274,13 @@ struct RideDetailView: View {
         }
     }
 
-    private func abbreviatedName(_ fullName: String) -> String {
+    func abbreviatedName(_ fullName: String) -> String {
         let parts = fullName.split(separator: " ").map(String.init)
         guard parts.count >= 2 else { return fullName }
         return "\(parts[0]) \(parts[1].prefix(1))."
     }
 
-    private var emptySpotRow: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .strokeBorder(
-                    Color.secondary.opacity(0.3),
-                    style: StrokeStyle(lineWidth: 1.5, dash: [4])
-                )
-                .frame(width: 32, height: 32)
-            Text("Open spot").font(.subheadline).foregroundStyle(.secondary)
-        }
-    }
-
-    private func styledButton(_ title: String, background: Color, foreground: Color) -> some View {
+    func styledButton(_ title: String, background: Color, foreground: Color) -> some View {
         Text(title)
             .font(.headline)
             .frame(maxWidth: .infinity)
@@ -277,18 +290,7 @@ struct RideDetailView: View {
             .cornerRadius(12)
     }
 
-    @ViewBuilder
-    private var liabilityNote: some View {
-        if !isCreator && !isJoined {
-            Text("Meet in a public campus location. BC Flight Share is not responsible for ride safety.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 4)
-        }
-    }
-
-    private func openUber() {
+    func openUber() {
         let uberURL = URL(string: "uber://")!
         let fallback = URL(string: "https://m.uber.com/")!
         if UIApplication.shared.canOpenURL(uberURL) {

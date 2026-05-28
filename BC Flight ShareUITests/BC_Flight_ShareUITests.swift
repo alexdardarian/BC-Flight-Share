@@ -62,7 +62,6 @@ final class BC_Flight_ShareUITests: XCTestCase {
 
     @MainActor
     func testSignIn_buttonDisabledWithEmptyFields() throws {
-        let signInButton = app.buttons["Sign In"].firstMatch
         // On the sign-in form the Sign In action button should be disabled when fields are empty
         let emailField = app.textFields["BC Email (@bc.edu)"]
         XCTAssertTrue(emailField.waitForExistence(timeout: 5))
