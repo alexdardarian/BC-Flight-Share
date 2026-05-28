@@ -38,6 +38,7 @@ struct RideDetailView: View {
                     groupChatRow
                     Divider()
                     uberButton
+                    liabilityNote
                     actionButton
                 }
                 .padding(24)
@@ -229,7 +230,10 @@ struct RideDetailView: View {
     // MARK: - Helpers
 
     private func riderRow(uid: String, name: String, gender: String) -> some View {
-        HStack(spacing: 10) {
+        let showFull = isJoined || isCreator
+        let displayName = showFull ? name : abbreviatedName(name)
+        let displayText = showFull && !gender.isEmpty ? "\(displayName) (\(gender))" : displayName
+        return HStack(spacing: 10) {
             Circle()
                 .fill(Color.bcMaroon.opacity(0.12))
                 .frame(width: 32, height: 32)
@@ -238,9 +242,15 @@ struct RideDetailView: View {
                         .font(.subheadline.bold())
                         .foregroundStyle(Color.bcMaroon)
                 )
-            Text(gender.isEmpty ? name : "\(name) (\(gender))")
+            Text(displayText)
                 .font(.subheadline)
         }
+    }
+
+    private func abbreviatedName(_ fullName: String) -> String {
+        let parts = fullName.split(separator: " ").map(String.init)
+        guard parts.count >= 2 else { return fullName }
+        return "\(parts[0]) \(parts[1].prefix(1))."
     }
 
     private var emptySpotRow: some View {
@@ -263,6 +273,17 @@ struct RideDetailView: View {
             .background(background)
             .foregroundStyle(foreground)
             .cornerRadius(12)
+    }
+
+    @ViewBuilder
+    private var liabilityNote: some View {
+        if !isCreator && !isJoined {
+            Text("Meet in a public campus location. BC Flight Share is not responsible for ride safety.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 4)
+        }
     }
 
     private func openUber() {

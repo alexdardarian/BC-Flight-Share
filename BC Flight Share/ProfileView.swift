@@ -5,6 +5,9 @@ struct ProfileView: View {
     @State private var showSignOutAlert = false
     @State private var showEditProfile = false
 
+    private static let privacyPolicyURL = URL(string: "https://alexdardarian.github.io/BC-Flight-Share/privacy")!
+    private static let termsURL = URL(string: "https://alexdardarian.github.io/BC-Flight-Share/terms")!
+
     private var user: BCUser? { authVM.currentUser }
 
     var body: some View {
@@ -42,6 +45,20 @@ struct ProfileView: View {
                         .foregroundStyle(Color.bcMaroon)
                     Label("BC Flight Share v1.0", systemImage: "airplane")
                         .foregroundStyle(.primary)
+                    Text("Not an official Boston College service.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Legal") {
+                    Link(destination: ProfileView.privacyPolicyURL) {
+                        Label("Privacy Policy", systemImage: "hand.raised.fill")
+                    }
+                    .foregroundStyle(Color.bcMaroon)
+                    Link(destination: ProfileView.termsURL) {
+                        Label("Terms of Service", systemImage: "doc.text.fill")
+                    }
+                    .foregroundStyle(Color.bcMaroon)
                 }
 
                 Section {

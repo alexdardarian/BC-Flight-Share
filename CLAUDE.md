@@ -147,29 +147,22 @@ Requires `firebase-tools` installed (`npm install -g firebase-tools`) and `fireb
 
 ---
 
-## Safety Audit — Next Session Priorities
+## Safety Audit — App Store Checklist
 
-Full audit completed. Three tiers of work remain before App Store submission.
+### 🔴 Tier 1 — App Store Blockers
 
-### 🔴 Tier 1 — App Store Blockers (do these first)
+1. **Privacy Policy** — ⚠️ NEEDS HOSTING: Written at `docs/privacy.md`. Enable GitHub Pages on the repo (Settings → Pages → Source: Deploy from branch `main`, folder `/docs`) to publish it at `https://alexdardarian.github.io/BC-Flight-Share/privacy`. Also add the URL to `Info.plist` (key: `NSPrivacyPolicyURL`). App Store will reject without it.
+2. **Terms of Service** — ⚠️ NEEDS HOSTING: Written at `docs/terms.md`. Same GitHub Pages setup publishes it at `https://alexdardarian.github.io/BC-Flight-Share/terms`. `ProfileView.swift` URLs already point to both pages.
+3. ✅ **Liability disclaimer in-app** — Added to `RideDetailView` above the Join button (hidden for creators/joined riders).
+4. ✅ **Full names + genders gated** — `RideDetailView.riderRow` now shows first name + last initial and hides gender for non-joined, non-creator users. `DayRidesView.RideCard` no longer shows `creatorGender`.
 
-1. **Privacy Policy** — Write and host at a public URL (GitHub Pages or Notion). Add link to `ProfileView` in a new "Legal" section and to Info.plist. App Store will reject without it.
-2. **Terms of Service** — Same hosting requirement. Must include:
-   - Liability waiver: "BC Flight Share is not responsible for what happens during rides"
-   - Uber disclaimer: "Clicking 'Open in Uber' is subject to Uber's own terms"
-   - "This is not an official BC service"
-   - Age requirement: "You must be 18 or older to use this app"
-   - Reporting procedure and expected response time
-3. **Liability disclaimer in-app** — Add a brief disclaimer on `RideDetailView` before the Join button ("Meet in a public campus location. BC Flight Share is not responsible for ride safety.").
-4. **Full names + genders visible before joining** — Currently any @bc.edu user can see every rider's full name and gender on every ride. Fix: show only first name + last initial to non-joined users. The `riders` map in `RideDetailView` exposes `rider.name` and `rider.gender` — gate full info behind `isJoined || isCreator`.
+### 🟡 Tier 2 — Launch Safety
 
-### 🟡 Tier 2 — Launch Safety (do before going public)
-
-5. **Age confirmation at signup** — Add "I confirm I am 18 or older" checkbox to `SignUpForm` in `AuthView.swift` before account creation.
-6. **Hide gender from non-joined users** — In `RideDetailView.riderRow` and `DayRidesView.RideCard`, only show gender to riders who have joined. The `creatorGender` in `RideCard` (`DayRidesView.swift` line ~115) is visible to everyone.
-7. **Rate-limit ride creation** — Cloud Function: max 5 active rides per user at a time. Alternatively, add a client-side check in `CreateRideView` counting the user's existing rides before allowing posting.
-8. **Meeting locations** — The custom text field in `CreateRideView` lets users type anything (e.g. home address). Consider restricting to the `quickMeetingSpots` chip list only, or adding a warning label.
-9. **"Not affiliated with BC" disclaimer** — Add one line to `ProfileView` About section.
+5. ✅ **Age confirmation at signup** — "I confirm I am 18 years of age or older" toggle added to `SignUpForm`; blocks account creation until checked.
+6. ✅ **Gender hidden from non-joined users** — Handled in Tier 1 item 4 above.
+7. **Rate-limit ride creation** — Cloud Function: max 5 active rides per user at a time. Or client-side check in `CreateRideView`.
+8. ✅ **Meeting location warning** — Footer added to meeting location section in `CreateRideView`: "Use a public campus location. Do not enter a personal address."
+9. ✅ **"Not affiliated with BC" disclaimer** — Added to `ProfileView` About section.
 
 ### 🟢 Tier 3 — Post-Launch Polish
 
@@ -178,12 +171,3 @@ Full audit completed. Three tiers of work remain before App Store submission.
 12. **Account deletion flow** — Button in `ProfileView` that deletes Firestore user doc, all authored rides, and signs out. Required for App Store (GDPR/CCPA) in some markets.
 13. **Accessibility** — Add `.accessibilityLabel` to all icon-only buttons and colored badges.
 14. **Emergency contact field** — Optional field on profile, stored in `users/{uid}`, never shown to other users.
-
-### Key files to touch for Tier 1+2
-| Task | File(s) |
-|------|---------|
-| Privacy Policy / ToS links | `ProfileView.swift`, `AuthView.swift` (SignUpForm) |
-| Liability disclaimer | `RideDetailView.swift` (near actionButton) |
-| Name/gender gating | `RideDetailView.swift` (riderRow), `DayRidesView.swift` (RideCard) |
-| Age confirmation | `AuthView.swift` (SignUpForm) |
-| "Not affiliated with BC" | `ProfileView.swift` (About section) |

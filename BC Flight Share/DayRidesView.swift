@@ -130,7 +130,7 @@ struct RideCard: View {
                 }
             }
 
-            Text("Posted by \(ride.creatorName) (\(ride.creatorGender))")
+            Text("Posted by \(ride.creatorName)")
                 .font(.caption)
                 .foregroundStyle(Color.secondary.opacity(0.7))
         }

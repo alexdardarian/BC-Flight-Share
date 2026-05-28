@@ -115,6 +115,8 @@ struct CreateRideView: View {
             TextField("Or type a custom spot", text: $meetingLocation)
         } header: {
             Text(direction == .toAirport ? "Pickup at BC" : "Dropoff at BC")
+        } footer: {
+            Text("Use a public campus location. Do not enter a personal address.")
         }
     }
 

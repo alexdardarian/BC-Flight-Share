@@ -121,6 +121,7 @@ struct SignUpForm: View {
     @State private var grade = "Freshman"
     @State private var dorm = "Gonzaga Hall"
     @State private var isLoading = false
+    @State private var ageConfirmed = false
 
     private let genders = ["Male", "Female", "Non-binary", "Prefer not to say"]
 
@@ -140,7 +141,7 @@ struct SignUpForm: View {
     }
 
     private var isValid: Bool {
-        !name.isEmpty && !email.isEmpty && password.count >= 6 && !passwordMismatch
+        !name.isEmpty && !email.isEmpty && password.count >= 6 && !passwordMismatch && ageConfirmed
     }
 
     var body: some View {
@@ -204,6 +205,15 @@ struct SignUpForm: View {
                     }
                     .tint(Color.bcMaroon)
                 }
+
+                Toggle(isOn: $ageConfirmed) {
+                    Text("I confirm I am 18 years of age or older")
+                        .font(.subheadline)
+                }
+                .tint(Color.bcMaroon)
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
 
                 if let error = authVM.errorMessage {
                     Text(error)
