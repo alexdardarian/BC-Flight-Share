@@ -76,7 +76,7 @@ Ride records are automatically deleted by a scheduled background process approxi
 
 **Access and correction:** You can view and edit your name, gender, year, and dorm at any time from the Profile screen.
 
-**Account deletion:** To delete your account and all associated data, email [alexdardarian@gmail.com](mailto:alexdardarian@gmail.com) with the subject line "Account Deletion Request" from your @bc.edu address. We will process the request within 30 days.
+**Account deletion:** You can delete your account directly from the app by going to **Profile → Delete Account**. This immediately and permanently removes your profile, all rides you created, and your block list from our systems. If you are unable to access the app, email [alexdardarian@gmail.com](mailto:alexdardarian@gmail.com) with the subject line "Account Deletion Request" from your @bc.edu address and we will process the request within 30 days.
 
 **Data export:** To request a copy of the data we hold about you, email the address above.
 

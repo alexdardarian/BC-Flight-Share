@@ -293,10 +293,10 @@ private extension RideDetailView {
     func openUber() {
         let uberURL = URL(string: "uber://")!
         let fallback = URL(string: "https://m.uber.com/")!
-        if UIApplication.shared.canOpenURL(uberURL) {
-            UIApplication.shared.open(uberURL)
-        } else {
-            UIApplication.shared.open(fallback)
+        UIApplication.shared.open(uberURL, options: [:]) { success in
+            if !success {
+                UIApplication.shared.open(fallback)
+            }
         }
     }
 }

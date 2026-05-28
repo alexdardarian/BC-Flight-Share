@@ -155,7 +155,7 @@ Requires `firebase-tools` installed (`npm install -g firebase-tools`) and `fireb
 
 ### 🔴 Tier 1 — App Store Blockers
 
-1. **Privacy Policy** — ⚠️ NEEDS HOSTING: Written at `docs/privacy.md`. Enable GitHub Pages on the repo (Settings → Pages → Source: Deploy from branch `main`, folder `/docs`) to publish it at `https://alexdardarian.github.io/BC-Flight-Share/privacy`. Also add the URL to `Info.plist` (key: `NSPrivacyPolicyURL`). App Store will reject without it.
+1. **Privacy Policy** — ⚠️ NEEDS HOSTING: Written at `docs/privacy.md`. Enable GitHub Pages on the repo (Settings → Pages → Source: Deploy from branch `main`, folder `/docs`) to publish it at `https://alexdardarian.github.io/BC-Flight-Share/privacy`. `NSPrivacyPolicyURL` key is now set in `project.pbxproj` (via `INFOPLIST_KEY_NSPrivacyPolicyURL`). App Store will reject without the page being live.
 2. **Terms of Service** — ⚠️ NEEDS HOSTING: Written at `docs/terms.md`. Same GitHub Pages setup publishes it at `https://alexdardarian.github.io/BC-Flight-Share/terms`. `ProfileView.swift` URLs already point to both pages.
 3. ✅ **Liability disclaimer in-app** — Added to `RideDetailView` above the Join button (hidden for creators/joined riders).
 4. ✅ **Full names + genders gated** — `RideDetailView.riderRow` now shows first name + last initial and hides gender for non-joined, non-creator users. `DayRidesView.RideCard` no longer shows `creatorGender`.
@@ -164,7 +164,7 @@ Requires `firebase-tools` installed (`npm install -g firebase-tools`) and `fireb
 
 5. ✅ **Age confirmation at signup** — "I confirm I am 18 years of age or older" toggle added to `SignUpForm`; blocks account creation until checked.
 6. ✅ **Gender hidden from non-joined users** — Handled in Tier 1 item 4 above.
-7. **Rate-limit ride creation** — Cloud Function: max 5 active rides per user at a time. Or client-side check in `CreateRideView`.
+7. ✅ **Rate-limit ride creation** — Client-side 5-ride cap enforced in `CreateRideView` via `RideViewModel.activeRideCount(for:)`.
 8. ✅ **Meeting location warning** — Footer added to meeting location section in `CreateRideView`: "Use a public campus location. Do not enter a personal address."
 9. ✅ **"Not affiliated with BC" disclaimer** — Added to `ProfileView` About section.
 
