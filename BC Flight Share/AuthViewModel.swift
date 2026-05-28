@@ -12,6 +12,7 @@ class AuthViewModel {
     var pendingVerification = false
     var pendingVerificationEmail = ""
 
+    private static let devWhitelist: Set<String> = ["alexdardarian@gmail.com"]
     private let db = Firestore.firestore()
     private var authListener: AuthStateDidChangeListenerHandle?
 
@@ -56,7 +57,8 @@ class AuthViewModel {
         dorm: String
     ) async {
         errorMessage = nil
-        guard email.lowercased().hasSuffix("@bc.edu") else {
+        let isDevAccount = Self.devWhitelist.contains(email.lowercased())
+        guard isDevAccount || email.lowercased().hasSuffix("@bc.edu") else {
             errorMessage = "Please use your @bc.edu email address."
             return
         }

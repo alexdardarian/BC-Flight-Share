@@ -134,6 +134,10 @@ All SourceKit errors visible before Firebase is added via SPM are expected — t
 - **Blocking + message flagging** — `BlockViewModel` manages a real-time listener on `users/{uid}/blocks/` subcollection. Long-press any non-own rider in `RideDetailView` or message bubble in `ChatView` to block/flag. Blocked users' rides are filtered from calendar and day views. Reports land in `reports/` collection.
 - **Cloud Function — expired ride cleanup** — `cleanupExpiredRides` scheduled hourly in `functions/src/index.ts`; deletes rides where `earliestDepartureFromCampus + departureWindowMinutes + 2h < now`.
 - **Firebase Auth blocking function** — `enforceBC` beforeUserCreated trigger in `functions/src/index.ts`; rejects any account not ending in `@bc.edu` before it's created.
+- **Firebase Blaze upgrade** — project upgraded to Blaze plan; Cloud Functions deployed. Node runtime bumped to 20. `cleanupExpiredRides` has a `MAX_DELETES_PER_RUN = 400` safety cap. Artifact Registry cleanup policy set (images deleted after 1 day). Budget alert at $5/month.
+- **Dev account whitelist** — `alexdardarian@gmail.com` whitelisted in `enforceBC` (Cloud Function), `AuthViewModel.devWhitelist` (client), and `isDevAccount()` in `firestore.rules` so the dev account can sign in without a `@bc.edu` address.
+
+---
 
 ## Cloud Functions (Deploy)
 ```

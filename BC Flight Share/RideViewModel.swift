@@ -48,7 +48,7 @@ class RideViewModel {
         !ridesOn(date: date, excluding: blockedIds).isEmpty
     }
 
-    func createRide(request: CreateRideRequest, user: BCUser) async {
+    func createRide(request: CreateRideRequest, user: BCUser) async throws {
         let ride = Ride(
             creatorId: user.id,
             creatorName: user.name,
@@ -64,10 +64,20 @@ class RideViewModel {
             createdAt: Date(),
             direction: request.direction
         )
-        do {
-            _ = try db.collection("rides").addDocument(from: ride)
-        } catch {
-            errorMessage = error.localizedDescription
+        let docRef = db.collection("rides").document()
+        // setData(from:) is synchronous — wrap completion handler to properly surface server errors.
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            do {
+                try docRef.setData(from: ride) { error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
+                }
+            } catch {
+                continuation.resume(throwing: error)
+            }
         }
     }
 

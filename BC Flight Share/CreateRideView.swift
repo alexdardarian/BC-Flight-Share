@@ -17,6 +17,7 @@ struct CreateRideView: View {
     @State private var maxRiders = 3
     @State private var notes = ""
     @State private var isSubmitting = false
+    @State private var submitError: String?
 
     private let quickDestinations = [
         "Logan Airport (BOS)",
@@ -41,7 +42,8 @@ struct CreateRideView: View {
 
     init(selectedDate: Date? = nil) {
         self.selectedDate = selectedDate
-        let base = selectedDate ?? Date()
+        // Clamp to now so rides never default to a past departure time (today at midnight → expired instantly).
+        let base = max(selectedDate ?? Date(), Date())
         _earliestDeparture = State(initialValue: base)
         _flightDepartureTime = State(initialValue: base.addingTimeInterval(3600 * 2))
     }
@@ -79,6 +81,14 @@ struct CreateRideView: View {
             }
             .navigationTitle("Post a Ride")
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Couldn't Post Ride", isPresented: .init(
+                get: { submitError != nil },
+                set: { if !$0 { submitError = nil } }
+            )) {
+                Button("OK", role: .cancel) { submitError = nil }
+            } message: {
+                Text(submitError ?? "")
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -227,8 +237,13 @@ struct CreateRideView: View {
                     direction: direction
                 )
                 guard let user = authVM.currentUser else { return }
-                await rideVM.createRide(request: request, user: user)
-                dismiss()
+                do {
+                    try await rideVM.createRide(request: request, user: user)
+                    dismiss()
+                } catch {
+                    submitError = error.localizedDescription
+                    isSubmitting = false
+                }
             }
         } label: {
             if isSubmitting {

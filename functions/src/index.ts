@@ -6,9 +6,13 @@ import { getFirestore, Timestamp } from "firebase-admin/firestore";
 
 initializeApp();
 
+// Dev accounts allowed to bypass the @bc.edu requirement.
+const DEV_WHITELIST = ["alexdardarian@gmail.com"];
+
 // Enforce @bc.edu at Firebase Auth creation — blocks REST API abuse too.
 export const enforceBC = beforeUserCreated((event) => {
   const email = event.data.email ?? "";
+  if (DEV_WHITELIST.includes(email.toLowerCase())) return;
   if (!email.toLowerCase().endsWith("@bc.edu")) {
     throw new HttpsError(
       "invalid-argument",
@@ -16,6 +20,11 @@ export const enforceBC = beforeUserCreated((event) => {
     );
   }
 });
+
+// Safety cap: prevents a runaway bug from causing an unexpectedly large batch.
+// Firestore's own limit is 500; staying at 400 leaves headroom.
+// Any overflow is handled on the next hourly run — safe for a small app.
+const MAX_DELETES_PER_RUN = 400;
 
 // Delete rides whose departure window + 2-hour buffer has passed.
 export const cleanupExpiredRides = onSchedule("every 1 hours", async () => {
@@ -33,6 +42,13 @@ export const cleanupExpiredRides = onSchedule("every 1 hours", async () => {
   let count = 0;
 
   for (const doc of snapshot.docs) {
+    if (count >= MAX_DELETES_PER_RUN) {
+      console.warn(
+        `Reached MAX_DELETES_PER_RUN (${MAX_DELETES_PER_RUN}); ` +
+        "remaining expired rides will be cleaned on the next run."
+      );
+      break;
+    }
     const data = doc.data();
     const earliest = (data.earliestDepartureFromCampus as Timestamp).toDate();
     const windowMs = (data.departureWindowMinutes as number) * 60 * 1000;

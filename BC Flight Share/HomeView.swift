@@ -22,6 +22,14 @@ struct HomeView: View {
         .tint(Color.bcMaroon)
         .environment(rideVM)
         .environment(blockVM)
+        .alert("Error", isPresented: .init(
+            get: { rideVM.errorMessage != nil },
+            set: { if !$0 { rideVM.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { rideVM.errorMessage = nil }
+        } message: {
+            Text(rideVM.errorMessage ?? "")
+        }
         .onAppear {
             rideVM.startListening()
             if let uid = authVM.currentUser?.id {
