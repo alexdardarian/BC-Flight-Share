@@ -28,6 +28,11 @@ struct HomeView: View {
                 blockVM.startListening(userId: uid)
             }
         }
+        .onChange(of: authVM.currentUser?.id) { _, newId in
+            if let uid = newId, blockVM.blockedUserIds.isEmpty {
+                blockVM.startListening(userId: uid)
+            }
+        }
         .onDisappear {
             rideVM.stopListening()
             blockVM.stopListening()

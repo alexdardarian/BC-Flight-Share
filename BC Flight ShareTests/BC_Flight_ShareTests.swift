@@ -13,7 +13,6 @@ private func makeRide(
     Ride(
         creatorId: "user1",
         creatorName: "Alice",
-        creatorGender: "Female",
         destination: "Logan Airport (BOS)",
         terminal: "Terminal B",
         meetingLocation: "Lower Campus Bus Stop",
@@ -133,7 +132,6 @@ struct RideFilteringTests {
             id: id,
             creatorId: "user1",
             creatorName: "Alice",
-            creatorGender: "Female",
             destination: "Logan Airport (BOS)",
             terminal: "Terminal B",
             meetingLocation: "Lower Campus Bus Stop",

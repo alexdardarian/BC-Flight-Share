@@ -5,6 +5,7 @@ import FirebaseFirestore
 @MainActor
 class ChatViewModel {
     var messages: [Message] = []
+    var errorMessage: String?
 
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
@@ -42,6 +43,8 @@ class ChatViewModel {
             .collection("messages")
         do {
             _ = try ref.addDocument(from: msg)
-        } catch {}
+        } catch {
+            errorMessage = "Failed to send message. Please try again."
+        }
     }
 }

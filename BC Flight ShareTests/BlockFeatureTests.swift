@@ -13,7 +13,6 @@ private func makeBlockingRide(
         id: id,
         creatorId: creatorId,
         creatorName: "Test User",
-        creatorGender: "Other",
         destination: "Logan Airport (BOS)",
         terminal: "Terminal B",
         meetingLocation: "Lower Campus Bus Stop",

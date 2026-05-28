@@ -74,7 +74,7 @@ struct EmailVerificationView: View {
                     guard !isResending && resendCooldown == 0 else { return }
                     isResending = true
                     resendCooldown = 30
-                    Task {
+                    Task { @MainActor in
                         await authVM.resendVerificationEmail()
                         isResending = false
                         while resendCooldown > 0 {

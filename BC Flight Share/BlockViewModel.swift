@@ -5,6 +5,7 @@ import FirebaseFirestore
 @MainActor
 class BlockViewModel {
     var blockedUserIds: Set<String> = []
+    var errorMessage: String?
 
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
@@ -35,7 +36,9 @@ class BlockViewModel {
                 .collection("blocks")
                 .document(userId)
                 .setData(["blockedAt": FieldValue.serverTimestamp()])
-        } catch {}
+        } catch {
+            errorMessage = "Failed to block user. Please try again."
+        }
     }
 
     func reportMessage(reporterId: String, reportedUserId: String, messageId: String, rideId: String) async {
@@ -48,6 +51,8 @@ class BlockViewModel {
         ]
         do {
             _ = try await db.collection("reports").addDocument(data: data)
-        } catch {}
+        } catch {
+            errorMessage = "Failed to submit report. Please try again."
+        }
     }
 }

@@ -72,7 +72,6 @@ struct DepartureRangeTests {
         Ride(
             creatorId: "u1",
             creatorName: "Alice",
-            creatorGender: "Female",
             destination: "Logan Airport (BOS)",
             terminal: "Terminal B",
             meetingLocation: "Bus Stop",

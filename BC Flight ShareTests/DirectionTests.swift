@@ -93,7 +93,6 @@ struct RideDirectionTests {
             id: id,
             creatorId: creatorId,
             creatorName: "Alice",
-            creatorGender: "Female",
             destination: "Logan Airport (BOS)",
             terminal: "Terminal B",
             meetingLocation: "Lower Campus Bus Stop",
