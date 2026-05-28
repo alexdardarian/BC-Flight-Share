@@ -5,8 +5,11 @@ import FirebaseFirestore
 struct RideDetailView: View {
     @Environment(RideViewModel.self) private var rideVM
     @Environment(AuthViewModel.self) private var authVM
+    @Environment(BlockViewModel.self) private var blockVM
     @Environment(\.dismiss) private var dismiss
     let ride: Ride
+
+    @State private var userToBlock: (id: String, name: String)?
 
     private var currentUser: BCUser? { authVM.currentUser }
     private var isJoined: Bool { currentUser.map { ride.riders[$0.id] != nil } ?? false }
@@ -42,17 +45,33 @@ struct RideDetailView: View {
         }
         .navigationTitle("Ride Details")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Block User", isPresented: Binding(
+            get: { userToBlock != nil },
+            set: { if !$0 { userToBlock = nil } }
+        )) {
+            Button("Cancel", role: .cancel) { userToBlock = nil }
+            Button("Block", role: .destructive) {
+                if let target = userToBlock, let me = currentUser {
+                    Task { await blockVM.blockUser(myId: me.id, userId: target.id) }
+                }
+                userToBlock = nil
+            }
+        } message: {
+            if let target = userToBlock {
+                Text("Block \(target.name)? Their rides won't appear in your feed.")
+            }
+        }
     }
 
     // MARK: - Subviews
 
     private var banner: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let icon = ride.rideDirection == .toAirport ? "airplane.departure" : "airplane.arrival"
+        let deptLabel = ride.rideDirection == .toAirport ? "Leaving campus: " : "Leaving airport: "
+        return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Image(systemName: "airplane.departure")
-                    .font(.title3)
-                Text(ride.destination)
-                    .font(.title2.bold())
+                Image(systemName: icon).font(.title3)
+                Text(ride.destination).font(.title2.bold())
             }
             .foregroundStyle(.white)
 
@@ -62,7 +81,7 @@ struct RideDetailView: View {
 
             HStack(spacing: 4) {
                 Image(systemName: "clock")
-                Text("Leaving campus: \(ride.departureRangeString)")
+                Text(deptLabel + ride.departureRangeString)
             }
             .font(.subheadline)
             .foregroundStyle(.white.opacity(0.85))
@@ -73,23 +92,20 @@ struct RideDetailView: View {
     }
 
     private var flightInfoRows: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            DetailRow(icon: "airplane", iconColor: Color.bcMaroon, title: "Flight Departs") {
+        let flightTitle = ride.rideDirection == .toAirport ? "Flight Departs" : "Flight Arrives"
+        let meetTitle = ride.rideDirection == .toAirport ? "Pickup at BC" : "Dropoff at BC"
+        return VStack(alignment: .leading, spacing: 16) {
+            DetailRow(icon: "airplane", iconColor: Color.bcMaroon, title: flightTitle) {
                 Text(ride.flightDepartureTime.formatted(
                     .dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()
                 ))
             }
-
             Divider()
-
             DetailRow(icon: "door.right.hand.open", iconColor: Color.bcMaroon, title: "Terminal") {
-                Text(ride.terminal)
-                    .font(.body.bold())
+                Text(ride.terminal).font(.body.bold())
             }
-
             Divider()
-
-            DetailRow(icon: "mappin.circle.fill", iconColor: Color.bcGold, title: "Meeting Location at BC") {
+            DetailRow(icon: "mappin.circle.fill", iconColor: Color.bcGold, title: meetTitle) {
                 Text(ride.meetingLocation)
             }
         }
@@ -99,11 +115,20 @@ struct RideDetailView: View {
         let riderTitle = "Riders (\(ride.riders.count)/\(ride.maxRiders))"
         return DetailRow(icon: "person.2.fill", iconColor: Color.bcMaroon, title: riderTitle) {
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(ride.riders).sorted(by: { $0.value.name < $1.value.name }), id: \.key) { _, rider in
-                    riderRow(name: rider.name, gender: rider.gender, filled: true)
+                ForEach(Array(ride.riders).sorted(by: { $0.value.name < $1.value.name }), id: \.key) { uid, rider in
+                    riderRow(uid: uid, name: rider.name, gender: rider.gender)
+                        .contextMenu {
+                            if uid != currentUser?.id {
+                                Button(role: .destructive) {
+                                    userToBlock = (id: uid, name: rider.name)
+                                } label: {
+                                    Label("Block User", systemImage: "hand.raised.fill")
+                                }
+                            }
+                        }
                 }
                 ForEach(0..<ride.spotsLeft, id: \.self) { _ in
-                    riderRow(name: "Open spot", gender: "", filled: false)
+                    emptySpotRow
                 }
             }
         }
@@ -203,28 +228,30 @@ struct RideDetailView: View {
 
     // MARK: - Helpers
 
-    private func riderRow(name: String, gender: String, filled: Bool) -> some View {
+    private func riderRow(uid: String, name: String, gender: String) -> some View {
         HStack(spacing: 10) {
-            if filled {
-                Circle()
-                    .fill(Color.bcMaroon.opacity(0.12))
-                    .frame(width: 32, height: 32)
-                    .overlay(
-                        Text(String(name.prefix(1)).uppercased())
-                            .font(.subheadline.bold())
-                            .foregroundStyle(Color.bcMaroon)
-                    )
-                Text(gender.isEmpty ? name : "\(name) (\(gender))")
-                    .font(.subheadline)
-            } else {
-                Circle()
-                    .strokeBorder(
-                        Color.secondary.opacity(0.3),
-                        style: StrokeStyle(lineWidth: 1.5, dash: [4])
-                    )
-                    .frame(width: 32, height: 32)
-                Text("Open spot").font(.subheadline).foregroundStyle(.secondary)
-            }
+            Circle()
+                .fill(Color.bcMaroon.opacity(0.12))
+                .frame(width: 32, height: 32)
+                .overlay(
+                    Text(String(name.prefix(1)).uppercased())
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Color.bcMaroon)
+                )
+            Text(gender.isEmpty ? name : "\(name) (\(gender))")
+                .font(.subheadline)
+        }
+    }
+
+    private var emptySpotRow: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .strokeBorder(
+                    Color.secondary.opacity(0.3),
+                    style: StrokeStyle(lineWidth: 1.5, dash: [4])
+                )
+                .frame(width: 32, height: 32)
+            Text("Open spot").font(.subheadline).foregroundStyle(.secondary)
         }
     }
 

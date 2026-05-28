@@ -35,13 +35,13 @@ class RideViewModel {
         listener?.remove()
     }
 
-    func ridesOn(date: Date) -> [Ride] {
+    func ridesOn(date: Date, excluding blockedIds: Set<String> = []) -> [Ride] {
         let key = dateKey(for: date)
-        return rides.filter { $0.dateKey == key }
+        return rides.filter { $0.dateKey == key && !blockedIds.contains($0.creatorId) }
     }
 
-    func hasRides(on date: Date) -> Bool {
-        !ridesOn(date: date).isEmpty
+    func hasRides(on date: Date, excluding blockedIds: Set<String> = []) -> Bool {
+        !ridesOn(date: date, excluding: blockedIds).isEmpty
     }
 
     func createRide(request: CreateRideRequest, user: BCUser) async {
@@ -58,7 +58,8 @@ class RideViewModel {
             maxRiders: request.maxRiders,
             riders: [user.id: RiderInfo(name: user.name, gender: user.gender)],
             notes: request.notes,
-            createdAt: Date()
+            createdAt: Date(),
+            direction: request.direction
         )
         do {
             _ = try db.collection("rides").addDocument(from: ride)

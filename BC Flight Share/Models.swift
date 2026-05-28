@@ -1,6 +1,11 @@
 import Foundation
 import FirebaseFirestore
 
+enum RideDirection: String, Codable {
+    case toAirport
+    case toBC
+}
+
 struct RiderInfo: Codable, Equatable {
     var name: String
     var gender: String
@@ -21,6 +26,9 @@ struct Ride: Identifiable, Codable {
     var riders: [String: RiderInfo]
     var notes: String
     var createdAt: Date
+    var direction: RideDirection?
+
+    var rideDirection: RideDirection { direction ?? .toAirport }
 
     var isFull: Bool { riders.count >= maxRiders }
     var spotsLeft: Int { max(0, maxRiders - riders.count) }
@@ -64,6 +72,7 @@ struct CreateRideRequest {
     var flightDepartureTime: Date
     var maxRiders: Int
     var notes: String
+    var direction: RideDirection
 }
 
 struct Message: Identifiable, Codable {

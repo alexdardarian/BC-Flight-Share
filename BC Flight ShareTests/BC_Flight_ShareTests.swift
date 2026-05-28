@@ -23,7 +23,8 @@ private func makeRide(
         maxRiders: maxRiders,
         riders: riders,
         notes: "",
-        createdAt: Date()
+        createdAt: Date(),
+        direction: nil
     )
 }
 
@@ -142,7 +143,8 @@ struct RideFilteringTests {
             maxRiders: 3,
             riders: ["user1": RiderInfo(name: "Alice", gender: "Female")],
             notes: "",
-            createdAt: Date()
+            createdAt: Date(),
+            direction: nil
         )
     }
 

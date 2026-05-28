@@ -82,7 +82,8 @@ struct DepartureRangeTests {
             maxRiders: 3,
             riders: ["u1": RiderInfo(name: "Alice", gender: "Female")],
             notes: "",
-            createdAt: Date()
+            createdAt: Date(),
+            direction: nil
         )
     }
 }

@@ -3,10 +3,11 @@ import SwiftUI
 struct DayRidesView: View {
     @Environment(RideViewModel.self) private var rideVM
     @Environment(AuthViewModel.self) private var authVM
+    @Environment(BlockViewModel.self) private var blockVM
     let date: Date
     @State private var showCreateRide = false
 
-    private var rides: [Ride] { rideVM.ridesOn(date: date) }
+    private var rides: [Ride] { rideVM.ridesOn(date: date, excluding: blockVM.blockedUserIds) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -70,10 +71,24 @@ struct RideCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: "airplane.departure")
-                    .foregroundStyle(Color.bcMaroon)
+                Image(
+                    systemName: ride.rideDirection == .toAirport
+                        ? "airplane.departure"
+                        : "airplane.arrival"
+                )
+                .foregroundStyle(Color.bcMaroon)
                 Text(ride.destination)
                     .font(.headline)
+                    .lineLimit(1)
+                Text(ride.rideDirection == .toAirport ? "To Airport" : "To BC")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        (ride.rideDirection == .toAirport ? Color.bcMaroon : Color.bcGold).opacity(0.12)
+                    )
+                    .foregroundStyle(ride.rideDirection == .toAirport ? Color.bcMaroon : Color.bcGold)
+                    .cornerRadius(6)
                 Spacer()
                 Text(ride.departureRangeString)
                     .font(.caption.bold())
@@ -92,9 +107,12 @@ struct RideCard: View {
             HStack(spacing: 6) {
                 Image(systemName: "mappin.circle.fill")
                     .foregroundStyle(Color.bcGold)
-                Text("Meet: \(ride.meetingLocation)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                Text(
+                    (ride.rideDirection == .toAirport ? "Pickup: " : "Dropoff: ")
+                    + ride.meetingLocation
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
             }
 
             HStack {

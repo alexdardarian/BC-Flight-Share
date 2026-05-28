@@ -7,6 +7,7 @@ struct CreateRideView: View {
 
     var selectedDate: Date?
 
+    @State private var direction: RideDirection = .toAirport
     @State private var destination = ""
     @State private var terminal = ""
     @State private var meetingLocation = ""
@@ -37,7 +38,6 @@ struct CreateRideView: View {
     ]
 
     private let bosTerminals = ["Terminal A", "Terminal B", "Terminal C", "Terminal E (Intl)"]
-    private let windowOptions = [30, 45, 60]
 
     init(selectedDate: Date? = nil) {
         self.selectedDate = selectedDate
@@ -53,6 +53,7 @@ struct CreateRideView: View {
     var body: some View {
         NavigationStack {
             Form {
+                directionSection
                 destinationSection
                 terminalSection
                 meetingLocationSection
@@ -76,6 +77,16 @@ struct CreateRideView: View {
 
     // MARK: - Sections
 
+    private var directionSection: some View {
+        Section {
+            Picker("Direction", selection: $direction) {
+                Text("✈ To Airport").tag(RideDirection.toAirport)
+                Text("🏠 To BC").tag(RideDirection.toBC)
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
     private var destinationSection: some View {
         Section {
             chipRow(options: quickDestinations, selected: $destination, color: Color.bcMaroon)
@@ -92,23 +103,27 @@ struct CreateRideView: View {
         } header: {
             Text("Terminal")
         } footer: {
-            Text("Which terminal will the Uber drop you off at?")
+            Text(direction == .toAirport
+                 ? "Which terminal will the Uber drop you off at?"
+                 : "Which terminal does your flight arrive at?")
         }
     }
 
     private var meetingLocationSection: some View {
         Section {
             chipRow(options: quickMeetingSpots, selected: $meetingLocation, color: Color.bcGold)
-            TextField("Or type a custom meeting spot", text: $meetingLocation)
+            TextField("Or type a custom spot", text: $meetingLocation)
         } header: {
-            Text("Meeting Location at BC")
+            Text(direction == .toAirport ? "Pickup at BC" : "Dropoff at BC")
         }
     }
 
     private var campusDepartureSection: some View {
         Section {
             DatePicker(
-                "Earliest Departure from Campus",
+                direction == .toAirport
+                    ? "Earliest Departure from Campus"
+                    : "Earliest Departure from Airport",
                 selection: $earliestDeparture,
                 in: Date()...
             )
@@ -122,28 +137,35 @@ struct CreateRideView: View {
             HStack {
                 Image(systemName: "clock.arrow.2.circlepath")
                     .foregroundStyle(Color.bcMaroon)
-                Text("Leaving campus: \(departureRangePreview)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                Text(
+                    (direction == .toAirport ? "Leaving campus: " : "Leaving airport: ")
+                    + departureRangePreview
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Departure from Campus")
+            Text(direction == .toAirport ? "Departure from Campus" : "Departure from Airport")
         } footer: {
-            Text("Riders can meet anytime within this window.")
+            Text(direction == .toAirport
+                 ? "Riders can meet anytime within this window."
+                 : "Riders will be picked up anytime within this window.")
         }
     }
 
     private var flightDepartureSection: some View {
         Section {
             DatePicker(
-                "Flight Leaves At",
+                direction == .toAirport ? "Flight Leaves At" : "Flight Arrives At",
                 selection: $flightDepartureTime,
                 displayedComponents: [.date, .hourAndMinute]
             )
         } header: {
-            Text("Flight Departure")
+            Text(direction == .toAirport ? "Flight Departure" : "Flight Arrival")
         } footer: {
-            Text("The actual time your flight departs.")
+            Text(direction == .toAirport
+                 ? "The actual time your flight departs."
+                 : "The actual time your flight lands.")
         }
     }
 
@@ -184,7 +206,8 @@ struct CreateRideView: View {
                     departureWindowMinutes: departureWindowMinutes,
                     flightDepartureTime: flightDepartureTime,
                     maxRiders: maxRiders,
-                        notes: notes
+                    notes: notes,
+                    direction: direction
                 )
                 await rideVM.createRide(request: request, user: authVM.currentUser!)
                 dismiss()

@@ -3,6 +3,7 @@ import SwiftUI
 struct CalendarTabView: View {
     @Environment(RideViewModel.self) private var rideVM
     @Environment(AuthViewModel.self) private var authVM
+    @Environment(BlockViewModel.self) private var blockVM
     @State private var displayedMonth = Date()
     @State private var selectedDate: Date?
     @State private var showCreateRide = false
@@ -36,7 +37,7 @@ struct CalendarTabView: View {
                                 date: date,
                                 isSelected: selectedDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false,
                                 isToday: calendar.isDateInToday(date),
-                                hasRides: rideVM.hasRides(on: date),
+                                hasRides: rideVM.hasRides(on: date, excluding: blockVM.blockedUserIds),
                                 isPast: date < calendar.startOfDay(for: Date())
                             )
                             .onTapGesture { selectedDate = date }

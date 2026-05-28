@@ -13,6 +13,16 @@ service cloud.firestore {
       // Each user can only read their own profile document.
       allow read: if request.auth != null && request.auth.uid == userId;
 
+      // ── blocks ───────────────────────────────────────────────────────────
+      match /blocks/{blockedId} {
+        // Users can only read and manage their own block list.
+        allow read, delete: if request.auth != null && request.auth.uid == userId && isBCUser();
+        allow create: if request.auth != null
+                      && request.auth.uid == userId
+                      && isBCUser()
+                      && blockedId != userId;
+      }
+
       // Create: the document id must match the caller's Firebase UID,
       // all required fields must be present, and name must be non-empty.
       allow create: if request.auth != null
@@ -51,6 +61,7 @@ service cloud.firestore {
                     && request.resource.data.meetingLocation.size() >= 1
                     && request.resource.data.meetingLocation.size() <= 200
                     && request.resource.data.notes.size()           <= 500
+                    && request.resource.data.direction in ["toAirport", "toBC"]
                     && request.resource.data.riders.keys().hasOnly([request.auth.uid])
                     && request.resource.data.riders.size() == 1;
 
@@ -76,6 +87,7 @@ service cloud.firestore {
         return resource.data.creatorId == request.auth.uid
             && coreFieldsUnchanged()
             && request.resource.data.riders      == resource.data.riders
+            && request.resource.data.direction   == resource.data.direction
             && request.resource.data.maxRiders   in [2, 3, 4, 5]
             && request.resource.data.destination.size() >= 1
             && request.resource.data.destination.size() <= 200
@@ -129,6 +141,17 @@ service cloud.firestore {
         // Messages are immutable and cannot be deleted by clients.
         allow update, delete: if false;
       }
+    }
+
+    // ── reports ────────────────────────────────────────────────────────────
+    match /reports/{reportId} {
+      // Any BC user can file a report; only admins read/modify via console.
+      allow create: if isBCUser()
+                    && request.resource.data.reporterId == request.auth.uid
+                    && request.resource.data.reportedUserId is string
+                    && request.resource.data.messageId is string
+                    && request.resource.data.rideId is string;
+      allow read, update, delete: if false;
     }
   }
 }

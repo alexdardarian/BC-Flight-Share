@@ -44,10 +44,14 @@ BC Flight Share/
 |-------|------|-------|
 | `creatorId` | String | Firebase UID of poster |
 | `creatorName` | String | Display name |
-| `destination` | String | e.g. "Logan Airport (BOS)" |
-| `meetingLocation` | String | e.g. "Lower Campus Bus Stop" |
-| `departureDate` | Date | Full date + time |
-| `maxRiders` | Int | 2–4 |
+| `direction` | String? | `"toAirport"` or `"toBC"`; nil on legacy docs (treated as `toAirport`) |
+| `destination` | String | The airport in both directions (going TO it or coming FROM it) |
+| `terminal` | String | Terminal at the airport (drop-off or arrival) |
+| `meetingLocation` | String | BC campus location (pickup for toAirport, dropoff for toBC) |
+| `earliestDepartureFromCampus` | Date | Departure from BC (toAirport) or from airport (toBC) |
+| `departureWindowMinutes` | Int | Flexibility window in minutes |
+| `flightDepartureTime` | Date | Flight departs (toAirport) or flight lands (toBC) |
+| `maxRiders` | Int | 2–5 |
 | `riders` | [String: RiderInfo] | Map of UID → {name, gender} for all riders |
 | `notes` | String | Optional free text |
 | `createdAt` | Date | Auto-set on creation |
@@ -123,7 +127,63 @@ All SourceKit errors visible before Firebase is added via SPM are expected — t
 - **Expired ride cleanup** — removed client-side auto-deletion from `RideViewModel.startListening()`; expired rides are filtered locally and ignored. Firestore accumulates them until a Cloud Function cleans up (see below).
 - **Rider data model** — replaced three parallel arrays (`currentRiderIds`, `currentRiderNames`, `currentRiderGenders`) with a single `riders: [String: RiderInfo]` map keyed by Firebase UID. Join/leave are now atomic single-field writes; name changes no longer break leave.
 
-### Remaining (pick up here next session)
-1. **Blocking + message flagging** — let users block others and flag chat messages; store in Firestore `blocks/` and `reports/` collections; update security rules to hide blocked users' rides.
-2. **Cloud Function — expired ride cleanup** — scheduled function that deletes rides where `departureEndTime + 2h < now`; removes the Firestore accumulation problem.
-3. **Firebase Auth blocking function** — enforce `@bc.edu` at the Auth level (not just Firestore) so non-BC accounts can't be created at all via the REST API.
+### Remaining
+- All previously listed items are complete. See below for what was added.
+
+### Recently Completed
+- **Blocking + message flagging** — `BlockViewModel` manages a real-time listener on `users/{uid}/blocks/` subcollection. Long-press any non-own rider in `RideDetailView` or message bubble in `ChatView` to block/flag. Blocked users' rides are filtered from calendar and day views. Reports land in `reports/` collection.
+- **Cloud Function — expired ride cleanup** — `cleanupExpiredRides` scheduled hourly in `functions/src/index.ts`; deletes rides where `earliestDepartureFromCampus + departureWindowMinutes + 2h < now`.
+- **Firebase Auth blocking function** — `enforceBC` beforeUserCreated trigger in `functions/src/index.ts`; rejects any account not ending in `@bc.edu` before it's created.
+
+## Cloud Functions (Deploy)
+```
+cd "~/Desktop/John Pork/BC Flight Share/functions"
+npm install
+npm run build
+cd ..
+firebase deploy --only functions,firestore:rules
+```
+Requires `firebase-tools` installed (`npm install -g firebase-tools`) and `firebase login`.
+
+---
+
+## Safety Audit — Next Session Priorities
+
+Full audit completed. Three tiers of work remain before App Store submission.
+
+### 🔴 Tier 1 — App Store Blockers (do these first)
+
+1. **Privacy Policy** — Write and host at a public URL (GitHub Pages or Notion). Add link to `ProfileView` in a new "Legal" section and to Info.plist. App Store will reject without it.
+2. **Terms of Service** — Same hosting requirement. Must include:
+   - Liability waiver: "BC Flight Share is not responsible for what happens during rides"
+   - Uber disclaimer: "Clicking 'Open in Uber' is subject to Uber's own terms"
+   - "This is not an official BC service"
+   - Age requirement: "You must be 18 or older to use this app"
+   - Reporting procedure and expected response time
+3. **Liability disclaimer in-app** — Add a brief disclaimer on `RideDetailView` before the Join button ("Meet in a public campus location. BC Flight Share is not responsible for ride safety.").
+4. **Full names + genders visible before joining** — Currently any @bc.edu user can see every rider's full name and gender on every ride. Fix: show only first name + last initial to non-joined users. The `riders` map in `RideDetailView` exposes `rider.name` and `rider.gender` — gate full info behind `isJoined || isCreator`.
+
+### 🟡 Tier 2 — Launch Safety (do before going public)
+
+5. **Age confirmation at signup** — Add "I confirm I am 18 or older" checkbox to `SignUpForm` in `AuthView.swift` before account creation.
+6. **Hide gender from non-joined users** — In `RideDetailView.riderRow` and `DayRidesView.RideCard`, only show gender to riders who have joined. The `creatorGender` in `RideCard` (`DayRidesView.swift` line ~115) is visible to everyone.
+7. **Rate-limit ride creation** — Cloud Function: max 5 active rides per user at a time. Alternatively, add a client-side check in `CreateRideView` counting the user's existing rides before allowing posting.
+8. **Meeting locations** — The custom text field in `CreateRideView` lets users type anything (e.g. home address). Consider restricting to the `quickMeetingSpots` chip list only, or adding a warning label.
+9. **"Not affiliated with BC" disclaimer** — Add one line to `ProfileView` About section.
+
+### 🟢 Tier 3 — Post-Launch Polish
+
+10. **Rider ratings/reviews** — Simple 5-star after ride completion; visible on rider profile.
+11. **"I arrived safely" button** — Appears in `MyRidesView` after `departureEndTime` passes.
+12. **Account deletion flow** — Button in `ProfileView` that deletes Firestore user doc, all authored rides, and signs out. Required for App Store (GDPR/CCPA) in some markets.
+13. **Accessibility** — Add `.accessibilityLabel` to all icon-only buttons and colored badges.
+14. **Emergency contact field** — Optional field on profile, stored in `users/{uid}`, never shown to other users.
+
+### Key files to touch for Tier 1+2
+| Task | File(s) |
+|------|---------|
+| Privacy Policy / ToS links | `ProfileView.swift`, `AuthView.swift` (SignUpForm) |
+| Liability disclaimer | `RideDetailView.swift` (near actionButton) |
+| Name/gender gating | `RideDetailView.swift` (riderRow), `DayRidesView.swift` (RideCard) |
+| Age confirmation | `AuthView.swift` (SignUpForm) |
+| "Not affiliated with BC" | `ProfileView.swift` (About section) |

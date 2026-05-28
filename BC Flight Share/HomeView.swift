@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AuthViewModel.self) private var authVM
     @State private var rideVM = RideViewModel()
+    @State private var blockVM = BlockViewModel()
 
     var body: some View {
         TabView {
@@ -20,7 +21,16 @@ struct HomeView: View {
         }
         .tint(Color.bcMaroon)
         .environment(rideVM)
-        .onAppear { rideVM.startListening() }
-        .onDisappear { rideVM.stopListening() }
+        .environment(blockVM)
+        .onAppear {
+            rideVM.startListening()
+            if let uid = authVM.currentUser?.id {
+                blockVM.startListening(userId: uid)
+            }
+        }
+        .onDisappear {
+            rideVM.stopListening()
+            blockVM.stopListening()
+        }
     }
 }
