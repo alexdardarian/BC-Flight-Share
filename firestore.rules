@@ -49,7 +49,7 @@ service cloud.firestore {
                     && request.resource.data.email     == resource.data.email
                     && request.resource.data.createdAt == resource.data.createdAt;
 
-      allow delete: if false;
+      allow delete: if isBCUser() && request.auth.uid == userId;
     }
 
     // ── rides ──────────────────────────────────────────────────────────────

@@ -46,13 +46,28 @@ struct CreateRideView: View {
         _flightDepartureTime = State(initialValue: base.addingTimeInterval(3600 * 2))
     }
 
+    private var isAtRideLimit: Bool {
+        guard let userId = authVM.currentUser?.id else { return false }
+        return rideVM.activeRideCount(for: userId) >= 5
+    }
+
     private var isValid: Bool {
-        !destination.isEmpty && !meetingLocation.isEmpty && !terminal.isEmpty
+        !destination.isEmpty && !meetingLocation.isEmpty && !terminal.isEmpty && !isAtRideLimit
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                if isAtRideLimit {
+                    Section {
+                        Label(
+                            "You've reached the 5-ride limit. Delete an existing ride to post a new one.",
+                            systemImage: "exclamationmark.triangle.fill"
+                        )
+                        .foregroundStyle(.orange)
+                        .font(.subheadline)
+                    }
+                }
                 directionSection
                 destinationSection
                 terminalSection

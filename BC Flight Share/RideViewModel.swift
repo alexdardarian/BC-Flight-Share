@@ -40,6 +40,10 @@ class RideViewModel {
         return rides.filter { $0.dateKey == key && !blockedIds.contains($0.creatorId) }
     }
 
+    func activeRideCount(for userId: String) -> Int {
+        rides.filter { $0.creatorId == userId }.count
+    }
+
     func hasRides(on date: Date, excluding blockedIds: Set<String> = []) -> Bool {
         !ridesOn(date: date, excluding: blockedIds).isEmpty
     }

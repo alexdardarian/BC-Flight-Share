@@ -124,6 +124,31 @@ class AuthViewModel {
         }
     }
 
+    func deleteAccount(rides: [Ride]) async {
+        guard let user = currentUser, let firebaseUser = Auth.auth().currentUser else { return }
+        errorMessage = nil
+        do {
+            for ride in rides where ride.riders[user.id] != nil && ride.creatorId != user.id {
+                guard let rideId = ride.id else { continue }
+                try? await db.collection("rides").document(rideId).updateData([
+                    "riders.\(user.id)": FieldValue.delete()
+                ])
+            }
+            let snapshot = try await db.collection("rides")
+                .whereField("creatorId", isEqualTo: user.id)
+                .getDocuments()
+            for doc in snapshot.documents {
+                try? await db.collection("rides").document(doc.documentID).delete()
+            }
+            try await db.collection("users").document(user.id).delete()
+            try await firebaseUser.delete()
+            currentUser = nil
+            pendingVerification = false
+        } catch {
+            errorMessage = friendlyAuthError(error)
+        }
+    }
+
     func updateProfile(name: String, gender: String, grade: String, dorm: String) async {
         guard var user = currentUser else { return }
         errorMessage = nil
