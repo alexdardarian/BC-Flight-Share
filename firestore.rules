@@ -2,8 +2,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Caller must be authenticated with a @bc.edu Firebase Auth email.
+    // Caller must be authenticated, email-verified, and have a @bc.edu address.
     function isBCUser() {
+      return request.auth != null
+          && request.auth.token.email_verified == true
+          && request.auth.token.email.lower().matches('.*@bc\\.edu');
+    }
+
+    // Used only for profile creation at signup, before email is verified.
+    function isUnverifiedBCAuth() {
       return request.auth != null
           && request.auth.token.email.lower().matches('.*@bc\\.edu');
     }
@@ -23,11 +30,10 @@ service cloud.firestore {
                       && blockedId != userId;
       }
 
-      // Create: the document id must match the caller's Firebase UID,
-      // all required fields must be present, and name must be non-empty.
-      allow create: if request.auth != null
-                    && request.auth.uid == userId
-                    && isBCUser()
+      // Create: allowed before email verification so the profile doc is
+      // written immediately after signup (before the user taps the link).
+      allow create: if request.auth.uid == userId
+                    && isUnverifiedBCAuth()
                     && request.resource.data.id == request.auth.uid
                     && request.resource.data.name.size() >= 1
                     && request.resource.data.name.size() <= 100

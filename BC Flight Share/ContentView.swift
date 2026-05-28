@@ -15,6 +15,9 @@ struct ContentView: View {
             if authVM.isLoading {
                 ProgressView()
                     .tint(Color.bcMaroon)
+            } else if authVM.pendingVerification {
+                EmailVerificationView()
+                    .environment(authVM)
             } else if authVM.currentUser != nil {
                 HomeView()
                     .environment(authVM)

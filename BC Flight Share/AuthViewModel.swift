@@ -9,6 +9,8 @@ class AuthViewModel {
     var currentUser: BCUser?
     var isLoading = true
     var errorMessage: String?
+    var pendingVerification = false
+    var pendingVerificationEmail = ""
 
     private let db = Firestore.firestore()
     private var authListener: AuthStateDidChangeListenerHandle?
@@ -18,15 +20,25 @@ class AuthViewModel {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if let firebaseUser {
-                    await self.fetchUser(uid: firebaseUser.uid)
+                    if firebaseUser.isEmailVerified {
+                        self.pendingVerification = false
+                        self.pendingVerificationEmail = ""
+                        await self.fetchUser(uid: firebaseUser.uid)
+                    } else {
+                        self.pendingVerification = true
+                        self.pendingVerificationEmail = firebaseUser.email ?? ""
+                        self.currentUser = nil
+                        self.isLoading = false
+                    }
                 } else {
                     self.currentUser = nil
+                    self.pendingVerification = false
+                    self.pendingVerificationEmail = ""
                     self.isLoading = false
                 }
             }
         }
 
-        // Fallback: if Firebase never responds within 5 seconds, show auth screen
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(5))
             if self.isLoading {
@@ -64,7 +76,8 @@ class AuthViewModel {
                 createdAt: Date()
             )
             try db.collection("users").document(user.id).setData(from: user)
-            currentUser = user
+            try await result.user.sendEmailVerification()
+            // auth state listener will set pendingVerification = true
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -74,7 +87,38 @@ class AuthViewModel {
         errorMessage = nil
         do {
             let result = try await Auth.auth().signIn(withEmail: email, password: password)
-            await fetchUser(uid: result.user.uid)
+            if result.user.isEmailVerified {
+                await fetchUser(uid: result.user.uid)
+            } else {
+                pendingVerification = true
+                pendingVerificationEmail = result.user.email ?? ""
+                isLoading = false
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func refreshVerificationStatus() async {
+        errorMessage = nil
+        do {
+            try await Auth.auth().currentUser?.reload()
+            guard let firebaseUser = Auth.auth().currentUser else { return }
+            if firebaseUser.isEmailVerified {
+                pendingVerification = false
+                await fetchUser(uid: firebaseUser.uid)
+            } else {
+                errorMessage = "Email not verified yet. Check your @bc.edu inbox."
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func resendVerificationEmail() async {
+        errorMessage = nil
+        do {
+            try await Auth.auth().currentUser?.sendEmailVerification()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -98,6 +142,8 @@ class AuthViewModel {
     func signOut() {
         try? Auth.auth().signOut()
         currentUser = nil
+        pendingVerification = false
+        pendingVerificationEmail = ""
     }
 
     private func fetchUser(uid: String) async {
