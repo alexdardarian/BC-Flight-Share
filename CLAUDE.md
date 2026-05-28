@@ -155,8 +155,8 @@ Requires `firebase-tools` installed (`npm install -g firebase-tools`) and `fireb
 
 ### 🔴 Tier 1 — App Store Blockers
 
-1. **Privacy Policy** — ⚠️ NEEDS HOSTING: Written at `docs/privacy.md`. Enable GitHub Pages on the repo (Settings → Pages → Source: Deploy from branch `main`, folder `/docs`) to publish it at `https://alexdardarian.github.io/BC-Flight-Share/privacy`. `NSPrivacyPolicyURL` key is now set in `project.pbxproj` (via `INFOPLIST_KEY_NSPrivacyPolicyURL`). App Store will reject without the page being live.
-2. **Terms of Service** — ⚠️ NEEDS HOSTING: Written at `docs/terms.md`. Same GitHub Pages setup publishes it at `https://alexdardarian.github.io/BC-Flight-Share/terms`. `ProfileView.swift` URLs already point to both pages.
+1. ✅ **Privacy Policy** — Live at `https://alexdardarian.github.io/BC-Flight-Share/privacy`. `NSPrivacyPolicyURL` set in `project.pbxproj` via `INFOPLIST_KEY_NSPrivacyPolicyURL`.
+2. ✅ **Terms of Service** — Live at `https://alexdardarian.github.io/BC-Flight-Share/terms`. `ProfileView.swift` URLs point to both pages.
 3. ✅ **Liability disclaimer in-app** — Added to `RideDetailView` above the Join button (hidden for creators/joined riders).
 4. ✅ **Full names + genders gated** — `RideDetailView.riderRow` now shows first name + last initial and hides gender for non-joined, non-creator users. `DayRidesView.RideCard` no longer shows `creatorGender`.
 
