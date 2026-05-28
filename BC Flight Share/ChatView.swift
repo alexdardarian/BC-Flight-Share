@@ -47,6 +47,16 @@ struct ChatView: View {
 
             Divider()
 
+            if let error = chatVM.errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.red.opacity(0.85))
+            }
+
             HStack(spacing: 12) {
                 TextField("Message...", text: $messageText, axis: .vertical)
                     .lineLimit(1...4)

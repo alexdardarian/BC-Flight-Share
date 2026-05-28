@@ -61,6 +61,17 @@ struct EditProfileView: View {
             }
             .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) {
+                if let error = authVM.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.red.opacity(0.85))
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -75,7 +86,10 @@ struct EditProfileView: View {
                                 grade: grade,
                                 dorm: dorm
                             )
-                            dismiss()
+                            isSaving = false
+                            if authVM.errorMessage == nil {
+                                dismiss()
+                            }
                         }
                     }
                     .disabled(!nameIsValid || isSaving)

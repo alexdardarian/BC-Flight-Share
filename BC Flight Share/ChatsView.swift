@@ -55,7 +55,7 @@ struct ChatRideRow: View {
                 .fill(Color.bcMaroon.opacity(0.12))
                 .frame(width: 44, height: 44)
                 .overlay(
-                    Image(systemName: "airplane.departure")
+                    Image(systemName: ride.rideDirection == .toAirport ? "airplane.departure" : "airplane.arrival")
                         .foregroundStyle(Color.bcMaroon)
                         .font(.system(size: 18))
                 )
