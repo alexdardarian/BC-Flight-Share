@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		440E5A792FC7720900B1FBE4 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 440E5A782FC7720900B1FBE4 /* FirebaseAuth */; };
 		440E5A7B2FC7720900B1FBE4 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 440E5A7A2FC7720900B1FBE4 /* FirebaseFirestore */; };
+		4440EDF42FC89342009ACC32 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4440EDF32FC89342009ACC32 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +33,7 @@
 		440E5A352FC76C5300B1FBE4 /* BC Flight Share.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "BC Flight Share.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		440E5A422FC76C5700B1FBE4 /* BC Flight ShareTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "BC Flight ShareTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		440E5A4C2FC76C5700B1FBE4 /* BC Flight ShareUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "BC Flight ShareUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4440EDF32FC89342009ACC32 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -82,6 +84,7 @@
 		440E5A2C2FC76C5300B1FBE4 = {
 			isa = PBXGroup;
 			children = (
+				4440EDF32FC89342009ACC32 /* PrivacyInfo.xcprivacy */,
 				440E5A372FC76C5300B1FBE4 /* BC Flight Share */,
 				440E5A452FC76C5700B1FBE4 /* BC Flight ShareTests */,
 				440E5A4F2FC76C5700B1FBE4 /* BC Flight ShareUITests */,
@@ -224,6 +227,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4440EDF42FC89342009ACC32 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
