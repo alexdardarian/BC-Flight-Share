@@ -22,6 +22,7 @@ class AuthViewModel {
                 guard let self else { return }
                 if let firebaseUser {
                     if firebaseUser.isEmailVerified {
+                        _ = try? await firebaseUser.getIDToken(forcingRefresh: true)
                         self.pendingVerification = false
                         self.pendingVerificationEmail = ""
                         await self.fetchUser(uid: firebaseUser.uid)
@@ -90,6 +91,7 @@ class AuthViewModel {
         do {
             let result = try await Auth.auth().signIn(withEmail: email, password: password)
             if result.user.isEmailVerified {
+                _ = try await result.user.getIDToken(forcingRefresh: true)
                 await fetchUser(uid: result.user.uid)
             } else {
                 pendingVerification = true
@@ -107,6 +109,10 @@ class AuthViewModel {
             try await Auth.auth().currentUser?.reload()
             guard let firebaseUser = Auth.auth().currentUser else { return }
             if firebaseUser.isEmailVerified {
+                // Force-refresh the ID token so Firestore rules see email_verified: true.
+                // reload() updates the User object but does not rotate the JWT — Firestore
+                // would still see the old token with email_verified: false and deny reads.
+                _ = try await firebaseUser.getIDToken(forcingRefresh: true)
                 pendingVerification = false
                 await fetchUser(uid: firebaseUser.uid)
             } else {
